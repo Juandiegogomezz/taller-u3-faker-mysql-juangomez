@@ -1,0 +1,15 @@
+# Entorno virtual
+.venv/
+venv/
+
+# Cache de Python
+__pycache__/
+*.py[cod]
+
+# Credenciales reales
+.env
+
+# IDE / sistema
+.vscode/
+.idea/
+.DS_Store
