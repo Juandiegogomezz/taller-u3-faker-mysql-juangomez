@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy import Column, Date, Integer, MetaData, String, Table, create_engine, text
 from sqlalchemy.engine import URL
-
+from faker import Faker
 NOMBRE = "juan"
 TABLA = f"personas_{NOMBRE}"
 
@@ -50,5 +50,26 @@ def main():
     metadata.create_all(engine)
     print(f"Tabla '{TABLA}' lista")
 
+def generar_personas(cantidad):
+    """Genera una lista de diccionarios con datos falsos coherentes."""
+    fake = Faker("es_CO")
+    return [
+        {
+            "nombre": fake.first_name(),
+            "apellido": fake.last_name(),
+            "correo": fake.email(),
+            "fecha_nacimiento": fake.date_of_birth(minimum_age=18, maximum_age=90),
+            "ciudad": fake.city(),
+            "direccion": fake.address().replace("\n", ", "),
+            "telefono": fake.phone_number(),
+            "empresa": fake.company(),
+            "profesion": fake.job(),
+        }
+        for _ in range(cantidad)
+    ]
+
 if __name__ == "__main__":
     main()
+muestra = generar_personas(3)    
+for persona in muestra:
+    print(persona)    
