@@ -2,7 +2,7 @@
 import os
 
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, text
+from sqlalchemy import Column, Date, Integer, MetaData, String, Table, create_engine, text
 from sqlalchemy.engine import URL
 
 NOMBRE = "juan"
@@ -22,6 +22,22 @@ def crear_motor():
     )
     return create_engine(url)
 
+def definir_tabla(metadata):
+    """Define la estructura de la tabla: 1 PK + 9 atributos."""
+    return Table(
+        TABLA,
+        metadata,
+        Column("id", Integer, primary_key=True, autoincrement=True),
+        Column("nombre", String(100), nullable=False),
+        Column("apellido", String(100), nullable=False),
+        Column("correo", String(150), nullable=False),
+        Column("fecha_nacimiento", Date, nullable=False),
+        Column("ciudad", String(100)),
+        Column("direccion", String(255)),
+        Column("telefono", String(50)),
+        Column("empresa", String(150)),
+        Column("profesion", String(150)),
+    )
 
 def main():
     engine = crear_motor()
@@ -29,6 +45,10 @@ def main():
         conn.execute(text("SELECT 1"))
     print("Conexión exitosa a MySQL")
 
+    metadata = MetaData()
+    tabla = definir_tabla(metadata)
+    metadata.create_all(engine)
+    print(f"Tabla '{TABLA}' lista")
 
 if __name__ == "__main__":
     main()
