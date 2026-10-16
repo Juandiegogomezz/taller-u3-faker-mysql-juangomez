@@ -2,12 +2,13 @@
 import os
 
 from dotenv import load_dotenv
-from sqlalchemy import Column, Date, Integer, MetaData, String, Table, create_engine, text
+from sqlalchemy import Column, Date, Integer, MetaData, String, Table, create_engine, func, select, text
 from sqlalchemy.engine import URL
 from faker import Faker
 NOMBRE = "juan"
 TABLA = f"personas_{NOMBRE}"
-
+TOTAL_REGISTROS = 100_000
+TAMANO_LOTE = 10_000
 
 def crear_motor():
     """Crea el motor de SQLAlchemy leyendo las credenciales del archivo .env."""
@@ -39,16 +40,6 @@ def definir_tabla(metadata):
         Column("profesion", String(150)),
     )
 
-def main():
-    engine = crear_motor()
-    with engine.connect() as conn:
-        conn.execute(text("SELECT 1"))
-    print("Conexión exitosa a MySQL")
-
-    metadata = MetaData()
-    tabla = definir_tabla(metadata)
-    metadata.create_all(engine)
-    print(f"Tabla '{TABLA}' lista")
 
 def generar_personas(cantidad):
     """Genera una lista de diccionarios con datos falsos coherentes."""
@@ -67,6 +58,36 @@ def generar_personas(cantidad):
         }
         for _ in range(cantidad)
     ]
+
+def insertar_por_lotes(engine, tabla, registros):
+    """Inserta los registros en lotes. Vacía la tabla antes para no duplicar."""
+    with engine.begin() as conn:
+        conn.execute(text(f"TRUNCATE TABLE {TABLA}"))
+        for i in range(0, len(registros), TAMANO_LOTE):
+            lote = registros[i:i + TAMANO_LOTE]
+            conn.execute(tabla.insert(), lote)
+            print(f"Insertados {i + len(lote):,} / {len(registros):,}")
+
+def main():
+    engine = crear_motor()
+    with engine.connect() as conn:
+        conn.execute(text("SELECT 1"))
+    print("Conexión exitosa a MySQL")
+
+    metadata = MetaData()
+    tabla = definir_tabla(metadata)
+    metadata.create_all(engine)
+    print(f"Tabla '{TABLA}' lista")
+
+    print(f"Generando {TOTAL_REGISTROS:,} registros con Faker...")
+    registros = generar_personas(TOTAL_REGISTROS)
+
+    insertar_por_lotes(engine, tabla, registros)
+
+    with engine.connect() as conn:
+        total = conn.execute(select(func.count()).select_from(tabla)).scalar()
+    print(f"Proceso terminado: {total:,} registros en '{TABLA}'")
+
 
 if __name__ == "__main__":
     main()
